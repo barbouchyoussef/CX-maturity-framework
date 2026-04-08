@@ -5,9 +5,8 @@ import type {
   DimensionPayload,
 } from "../types/dimension.types";
 
-export async function getDimensions(sectorId?: number): Promise<Dimension[]> {
-  const query = sectorId ? `?sector_id=${sectorId}` : "";
-  return apiClient<Dimension[]>(`/dimensions${query}`);
+export async function getDimensions(): Promise<Dimension[]> {
+  return apiClient<Dimension[]>("/dimensions");
 }
 
 export async function createDimension(

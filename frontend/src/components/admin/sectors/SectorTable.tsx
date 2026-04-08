@@ -1,12 +1,48 @@
+import { useState, type DragEvent } from "react";
 import type { Sector } from "@/features/sectors/types/sector.types";
 
 type Props = {
   sectors: Sector[];
   onEdit: (sector: Sector) => void;
   onDelete: (sector: Sector) => void;
+  onReorder: (draggedId: number, targetId: number) => void;
 };
 
-export default function SectorTable({ sectors, onEdit, onDelete }: Props) {
+export default function SectorTable({
+  sectors,
+  onEdit,
+  onDelete,
+  onReorder,
+}: Props) {
+  const [draggedId, setDraggedId] = useState<number | null>(null);
+  const [dropTargetId, setDropTargetId] = useState<number | null>(null);
+
+  const handleDragStart = (
+    event: DragEvent<HTMLTableRowElement>,
+    sectorId: number
+  ) => {
+    setDraggedId(sectorId);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", String(sectorId));
+  };
+
+  const handleDrop = (
+    event: DragEvent<HTMLTableRowElement>,
+    targetSectorId: number
+  ) => {
+    event.preventDefault();
+
+    const dataId = Number(event.dataTransfer.getData("text/plain"));
+    const activeDraggedId = draggedId ?? dataId;
+
+    setDraggedId(null);
+    setDropTargetId(null);
+
+    if (!activeDraggedId || activeDraggedId === targetSectorId) return;
+
+    onReorder(activeDraggedId, targetSectorId);
+  };
+
   if (sectors.length === 0) {
     return (
       <div className="rounded-2xl border border-[#E5E7EB] bg-white p-8 text-center text-sm text-[#6B7280]">
@@ -28,13 +64,7 @@ export default function SectorTable({ sectors, onEdit, onDelete }: Props) {
                 Sector name
               </th>
               <th className="px-5 py-4 text-left text-sm font-semibold text-[#1A1A1A]">
-                Code
-              </th>
-              <th className="px-5 py-4 text-left text-sm font-semibold text-[#1A1A1A]">
                 Description
-              </th>
-              <th className="px-5 py-4 text-left text-sm font-semibold text-[#1A1A1A]">
-                Order
               </th>
               <th className="px-5 py-4 text-left text-sm font-semibold text-[#1A1A1A]">
                 Status
@@ -46,10 +76,26 @@ export default function SectorTable({ sectors, onEdit, onDelete }: Props) {
           </thead>
 
           <tbody>
-            {sectors.map((sector) => (
+            {[...sectors]
+              .sort((a, b) => a.display_order - b.display_order || a.id - b.id)
+              .map((sector) => (
               <tr
                 key={sector.id}
-                className="border-b border-[#E5E7EB] last:border-b-0"
+                draggable
+                onDragStart={(event) => handleDragStart(event, sector.id)}
+                onDragEnd={() => {
+                  setDraggedId(null);
+                  setDropTargetId(null);
+                }}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  setDropTargetId(sector.id);
+                }}
+                onDragLeave={() => setDropTargetId(null)}
+                onDrop={(event) => handleDrop(event, sector.id)}
+                className={`cursor-grab border-b border-[#E5E7EB] transition last:border-b-0 ${
+                  dropTargetId === sector.id ? "bg-[#FFF8CC]" : ""
+                } ${draggedId === sector.id ? "opacity-50" : ""}`}
               >
                 <td className="px-5 py-4 text-sm text-[#4B5563]">
                   {sector.id}
@@ -60,15 +106,7 @@ export default function SectorTable({ sectors, onEdit, onDelete }: Props) {
                 </td>
 
                 <td className="px-5 py-4 text-sm text-[#4B5563]">
-                  {sector.code}
-                </td>
-
-                <td className="px-5 py-4 text-sm text-[#4B5563]">
                   {sector.description || "-"}
-                </td>
-
-                <td className="px-5 py-4 text-sm text-[#4B5563]">
-                  {sector.display_order}
                 </td>
 
                 <td className="px-5 py-4 text-sm">

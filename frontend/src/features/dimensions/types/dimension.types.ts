@@ -1,6 +1,5 @@
 export type Dimension = {
   id: number;
-  sector_id: number;
   name: string;
   code: string;
   description?: string | null;
@@ -10,7 +9,6 @@ export type Dimension = {
 };
 
 export type DimensionPayload = {
-  sector_id: number;
   name: string;
   code: string;
   description?: string | null;

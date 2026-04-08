@@ -3,13 +3,11 @@ import type {
   Dimension,
   DimensionPayload,
 } from "@/features/dimensions/types/dimension.types";
-import type { Sector } from "@/features/sectors/types/sector.types";
 
 type Props = {
   isOpen: boolean;
   mode: "create" | "edit";
   initialDimension: Dimension | null;
-  sectors: Sector[];
   submitting: boolean;
   onClose: () => void;
   onSubmit: (payload: DimensionPayload) => Promise<void>;
@@ -18,7 +16,6 @@ type Props = {
 type FormContentProps = Omit<Props, "isOpen">;
 
 const emptyForm: DimensionPayload = {
-  sector_id: 0,
   name: "",
   code: "",
   description: "",
@@ -29,12 +26,10 @@ const emptyForm: DimensionPayload = {
 
 function getInitialForm(
   mode: "create" | "edit",
-  dimension: Dimension | null,
-  sectors: Sector[]
+  dimension: Dimension | null
 ): DimensionPayload {
   if (mode === "edit" && dimension) {
     return {
-      sector_id: dimension.sector_id,
       name: dimension.name,
       code: dimension.code,
       description: dimension.description || "",
@@ -44,26 +39,22 @@ function getInitialForm(
     };
   }
 
-  return {
-    ...emptyForm,
-    sector_id: sectors[0]?.id ?? 0,
-  };
+  return emptyForm;
 }
 
 function DimensionFormContent({
   mode,
   initialDimension,
-  sectors,
   submitting,
   onClose,
   onSubmit,
 }: FormContentProps) {
   const [form, setForm] = useState<DimensionPayload>(() =>
-    getInitialForm(mode, initialDimension, sectors)
+    getInitialForm(mode, initialDimension)
   );
 
   const handleChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value, type } = e.target;
 
@@ -72,7 +63,7 @@ function DimensionFormContent({
       [name]:
         type === "checkbox"
           ? (e.target as HTMLInputElement).checked
-          : ["sector_id", "display_order", "weight"].includes(name)
+          : ["display_order", "weight"].includes(name)
             ? Number(value)
             : value,
     }));
@@ -87,7 +78,6 @@ function DimensionFormContent({
     }
 
     await onSubmit({
-      sector_id: form.sector_id,
       name: form.name.trim(),
       code: form.code.trim().toUpperCase(),
       description: form.description?.trim() || null,
@@ -121,32 +111,6 @@ function DimensionFormContent({
       </div>
 
       <form onSubmit={handleSubmit} className="mt-8 grid gap-5">
-        <div>
-          <label
-            htmlFor="sector_id"
-            className="mb-2.5 block text-sm font-medium text-[#1A1A1A]"
-          >
-            Sector
-          </label>
-          <select
-            id="sector_id"
-            name="sector_id"
-            value={form.sector_id || ""}
-            onChange={handleChange}
-            required
-            className="h-12 w-full rounded-xl border border-[#E5E7EB] bg-[#FCFCFC] px-4 text-sm text-[#1A1A1A] outline-none focus:border-[#C5A04F] focus:bg-white"
-          >
-            <option value="" disabled>
-              Select a sector
-            </option>
-            {sectors.map((sector) => (
-              <option key={sector.id} value={sector.id}>
-                {sector.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
         <div className="grid gap-5 md:grid-cols-2">
           <div>
             <label
@@ -187,7 +151,7 @@ function DimensionFormContent({
           </div>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className="grid gap-5">
           <div>
             <label
               htmlFor="weight"
@@ -208,24 +172,6 @@ function DimensionFormContent({
             />
           </div>
 
-          <div>
-            <label
-              htmlFor="display_order"
-              className="mb-2.5 block text-sm font-medium text-[#1A1A1A]"
-            >
-              Display order
-            </label>
-            <input
-              id="display_order"
-              name="display_order"
-              type="number"
-              min="0"
-              value={form.display_order}
-              onChange={handleChange}
-              required
-              className="h-12 w-full rounded-xl border border-[#E5E7EB] bg-[#FCFCFC] px-4 text-sm text-[#1A1A1A] outline-none focus:border-[#C5A04F] focus:bg-white"
-            />
-          </div>
         </div>
 
         <div>
@@ -268,7 +214,7 @@ function DimensionFormContent({
 
           <button
             type="submit"
-            disabled={submitting || sectors.length === 0}
+            disabled={submitting}
             className="rounded-xl bg-[#1A1A1A] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
           >
             {submitting
@@ -289,7 +235,6 @@ export default function DimensionFormModal({
   isOpen,
   mode,
   initialDimension,
-  sectors,
   submitting,
   onClose,
   onSubmit,
@@ -299,10 +244,9 @@ export default function DimensionFormModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/30 px-4 py-6">
       <DimensionFormContent
-        key={`${mode}-${initialDimension?.id ?? "new"}-${sectors.length}`}
+        key={`${mode}-${initialDimension?.id ?? "new"}`}
         mode={mode}
         initialDimension={initialDimension}
-        sectors={sectors}
         submitting={submitting}
         onClose={onClose}
         onSubmit={onSubmit}

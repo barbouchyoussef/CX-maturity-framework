@@ -62,10 +62,21 @@ export default function AdminSectorsPage() {
     setError(null);
 
     try {
+      const sectorPayload =
+        modalMode === "create"
+          ? {
+              ...payload,
+              display_order:
+                sectors.length > 0
+                  ? Math.max(...sectors.map((sector) => sector.display_order)) + 1
+                  : 0,
+            }
+          : payload;
+
       if (modalMode === "create") {
-        await createSector(payload);
+        await createSector(sectorPayload);
       } else if (selectedSector) {
-        await updateSector(selectedSector.id, payload);
+        await updateSector(selectedSector.id, sectorPayload);
       }
 
       setIsModalOpen(false);
@@ -92,6 +103,52 @@ export default function AdminSectorsPage() {
       await loadSectors();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Delete failed");
+    }
+  };
+
+  const handleReorder = async (draggedId: number, targetId: number) => {
+    const orderedSectors = [...sectors].sort(
+      (a, b) => a.display_order - b.display_order || a.id - b.id
+    );
+    const currentIndex = orderedSectors.findIndex((item) => item.id === draggedId);
+    const targetIndex = orderedSectors.findIndex((item) => item.id === targetId);
+
+    if (currentIndex < 0 || targetIndex < 0 || currentIndex === targetIndex) {
+      return;
+    }
+
+    const reordered = [...orderedSectors];
+    const [moved] = reordered.splice(currentIndex, 1);
+    reordered.splice(targetIndex, 0, moved);
+
+    const reorderedWithOrder = reordered.map((item, index) => ({
+      ...item,
+      display_order: index,
+    }));
+    const changed = reorderedWithOrder.filter((item) => {
+      const previous = sectors.find((sector) => sector.id === item.id);
+      return previous?.display_order !== item.display_order;
+    });
+    const previousSectors = sectors;
+
+    if (changed.length === 0) return;
+
+    try {
+      setSectors(reorderedWithOrder);
+      await Promise.all(
+        changed.map((item) =>
+          updateSector(item.id, {
+            name: item.name,
+            code: item.code,
+            description: item.description,
+            display_order: item.display_order,
+            is_active: item.is_active,
+          })
+        )
+      );
+    } catch (err) {
+      setSectors(previousSectors);
+      setError(err instanceof Error ? err.message : "Reorder failed");
     }
   };
 
@@ -133,6 +190,7 @@ export default function AdminSectorsPage() {
             sectors={sectors}
             onEdit={openEditModal}
             onDelete={handleDelete}
+            onReorder={handleReorder}
           />
         )}
       </div>

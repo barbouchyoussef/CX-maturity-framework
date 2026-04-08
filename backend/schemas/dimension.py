@@ -3,7 +3,6 @@ from typing import Optional
 
 
 class DimensionCreate(BaseModel):
-    sector_id: int
     name: str
     code: str
     description: Optional[str] = None
@@ -13,7 +12,6 @@ class DimensionCreate(BaseModel):
 
 
 class DimensionUpdate(BaseModel):
-    sector_id: int
     name: str
     code: str
     description: Optional[str] = None
@@ -24,7 +22,6 @@ class DimensionUpdate(BaseModel):
 
 class DimensionOut(BaseModel):
     id: int
-    sector_id: int
     name: str
     code: str
     description: Optional[str] = None

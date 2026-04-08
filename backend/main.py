@@ -4,6 +4,7 @@ from routers.assessments import router as assessments_router
 from routers.sectors import router as sectors_router
 from routers.dimensions import router as dimensions_router
 from routers.subdimensions import router as subdimensions_router
+from routers.questions import router as questions_router
 
 app = FastAPI()
 
@@ -19,3 +20,4 @@ app.include_router(assessments_router)
 app.include_router(sectors_router)
 app.include_router(dimensions_router)
 app.include_router(subdimensions_router)
+app.include_router(questions_router)

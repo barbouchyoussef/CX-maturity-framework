@@ -10,7 +10,6 @@ from repositories.dimension_repository import (
     delete_dimension,
     get_all_dimensions,
     get_dimension_by_id,
-    get_dimensions_by_sector,
     toggle_dimension_status,
     update_dimension,
 )
@@ -19,10 +18,8 @@ router = APIRouter(prefix="/dimensions", tags=["dimensions"])
 
 
 @router.get("", response_model=list[DimensionOut])
-def get_dimensions_route(sector_id: int | None = None):
+def get_dimensions_route():
     try:
-        if sector_id is not None:
-            return get_dimensions_by_sector(sector_id)
         return get_all_dimensions()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -45,7 +42,6 @@ def get_dimension_route(dimension_id: int):
 def create_dimension_route(payload: DimensionCreate):
     try:
         dimension_id = create_dimension(
-            sector_id=payload.sector_id,
             name=payload.name,
             code=payload.code,
             description=payload.description,
@@ -66,7 +62,6 @@ def update_dimension_route(dimension_id: int, payload: DimensionUpdate):
     try:
         updated = update_dimension(
             dimension_id=dimension_id,
-            sector_id=payload.sector_id,
             name=payload.name,
             code=payload.code,
             description=payload.description,

@@ -190,7 +190,7 @@ function SubdimensionFormContent({
           </div>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className="grid gap-5">
           <div>
             <label
               htmlFor="weight"
@@ -211,27 +211,6 @@ function SubdimensionFormContent({
             />
           </div>
 
-          <div>
-            <label
-              htmlFor="display_order"
-              className="mb-2.5 block text-sm font-medium text-[#1A1A1A]"
-            >
-              Display order
-            </label>
-            <p className="mb-2 text-xs leading-5 text-[#6B7280]">
-              Lower numbers appear first; drag and drop updates this automatically.
-            </p>
-            <input
-              id="display_order"
-              name="display_order"
-              type="number"
-              min="0"
-              value={form.display_order}
-              onChange={handleChange}
-              required
-              className="h-12 w-full rounded-xl border border-[#E5E7EB] bg-[#FCFCFC] px-4 text-sm text-[#1A1A1A] outline-none focus:border-[#C5A04F] focus:bg-white"
-            />
-          </div>
         </div>
 
         <div>

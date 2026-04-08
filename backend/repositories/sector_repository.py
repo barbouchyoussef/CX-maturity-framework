@@ -110,7 +110,14 @@ def update_sector(
 
     with get_db_cursor(dictionary=False) as (_, cursor):
         cursor.execute(query, params)
-        return cursor.rowcount > 0
+        if cursor.rowcount > 0:
+            return True
+
+        cursor.execute(
+            "SELECT id FROM sectors WHERE id = %s LIMIT 1",
+            (sector_id,),
+        )
+        return cursor.fetchone() is not None
 
 
 def toggle_sector_status(sector_id: int) -> bool:

@@ -1,20 +1,43 @@
+import { useState, type DragEvent } from "react";
 import type { Dimension } from "@/features/dimensions/types/dimension.types";
-import type { Sector } from "@/features/sectors/types/sector.types";
 
 type Props = {
   dimensions: Dimension[];
-  sectors: Sector[];
   onEdit: (dimension: Dimension) => void;
   onDelete: (dimension: Dimension) => void;
+  onReorder: (draggedId: number, targetId: number) => void;
 };
 
 export default function DimensionTable({
   dimensions,
-  sectors,
   onEdit,
   onDelete,
+  onReorder,
 }: Props) {
-  const sectorNames = new Map(sectors.map((sector) => [sector.id, sector.name]));
+  const [draggedId, setDraggedId] = useState<number | null>(null);
+  const [dropTargetId, setDropTargetId] = useState<number | null>(null);
+
+  const handleDragStart = (
+    event: DragEvent<HTMLTableRowElement>,
+    dimensionId: number
+  ) => {
+    setDraggedId(dimensionId);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", String(dimensionId));
+  };
+
+  const handleDrop = (
+    event: DragEvent<HTMLTableRowElement>,
+    targetDimensionId: number
+  ) => {
+    event.preventDefault();
+    const dataId = Number(event.dataTransfer.getData("text/plain"));
+    const activeDraggedId = draggedId ?? dataId;
+    setDraggedId(null);
+    setDropTargetId(null);
+    if (!activeDraggedId || activeDraggedId === targetDimensionId) return;
+    onReorder(activeDraggedId, targetDimensionId);
+  };
 
   if (dimensions.length === 0) {
     return (
@@ -30,7 +53,7 @@ export default function DimensionTable({
         <table className="min-w-full border-collapse">
           <thead className="bg-[#FCFCFC]">
             <tr className="border-b border-[#E5E7EB]">
-              {["ID", "Sector", "Dimension", "Code", "Weight", "Order", "Status"].map(
+              {["ID", "Dimension", "Code", "Weight", "Status"].map(
                 (heading) => (
                   <th
                     key={heading}
@@ -47,16 +70,29 @@ export default function DimensionTable({
           </thead>
 
           <tbody>
-            {dimensions.map((dimension) => (
+            {[...dimensions]
+              .sort((a, b) => a.display_order - b.display_order || a.id - b.id)
+              .map((dimension) => (
               <tr
                 key={dimension.id}
-                className="border-b border-[#E5E7EB] last:border-b-0"
+                draggable
+                onDragStart={(event) => handleDragStart(event, dimension.id)}
+                onDragEnd={() => {
+                  setDraggedId(null);
+                  setDropTargetId(null);
+                }}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  setDropTargetId(dimension.id);
+                }}
+                onDragLeave={() => setDropTargetId(null)}
+                onDrop={(event) => handleDrop(event, dimension.id)}
+                className={`cursor-grab border-b border-[#E5E7EB] transition last:border-b-0 ${
+                  dropTargetId === dimension.id ? "bg-[#FFF8CC]" : ""
+                } ${draggedId === dimension.id ? "opacity-50" : ""}`}
               >
                 <td className="px-5 py-4 text-sm text-[#4B5563]">
                   {dimension.id}
-                </td>
-                <td className="px-5 py-4 text-sm text-[#4B5563]">
-                  {sectorNames.get(dimension.sector_id) ?? `Sector ${dimension.sector_id}`}
                 </td>
                 <td className="px-5 py-4 text-sm font-medium text-[#1A1A1A]">
                   {dimension.name}
@@ -66,9 +102,6 @@ export default function DimensionTable({
                 </td>
                 <td className="px-5 py-4 text-sm text-[#4B5563]">
                   {dimension.weight}
-                </td>
-                <td className="px-5 py-4 text-sm text-[#4B5563]">
-                  {dimension.display_order}
                 </td>
                 <td className="px-5 py-4 text-sm">
                   <span

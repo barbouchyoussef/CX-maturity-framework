@@ -1,4 +1,5 @@
 import { useState, type DragEvent } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import type { Dimension } from "@/features/dimensions/types/dimension.types";
 import type { Subdimension } from "@/features/subdimensions/types/subdimension.types";
 
@@ -34,6 +35,9 @@ export default function SubdimensionTable({
   onReorder,
 }: Props) {
   const [draggedId, setDraggedId] = useState<number | null>(null);
+  const [collapsedDimensionIds, setCollapsedDimensionIds] = useState<
+    Set<number>
+  >(new Set());
   const groupedSubdimensions = new Map<number, Subdimension[]>();
 
   for (const subdimension of subdimensions) {
@@ -76,6 +80,20 @@ export default function SubdimensionTable({
     setDraggedId(null);
   };
 
+  const toggleDimension = (dimensionId: number) => {
+    setCollapsedDimensionIds((prev) => {
+      const next = new Set(prev);
+
+      if (next.has(dimensionId)) {
+        next.delete(dimensionId);
+      } else {
+        next.add(dimensionId);
+      }
+
+      return next;
+    });
+  };
+
   if (dimensions.length === 0) {
     return (
       <div className="rounded-2xl border border-[#E5E7EB] bg-white p-8 text-center text-sm text-[#6B7280]">
@@ -90,6 +108,7 @@ export default function SubdimensionTable({
         const dimensionSubdimensions = sortByOrder(
           groupedSubdimensions.get(dimension.id) ?? []
         );
+        const isCollapsed = collapsedDimensionIds.has(dimension.id);
 
         return (
           <section
@@ -98,26 +117,36 @@ export default function SubdimensionTable({
             onDragOver={(event) => event.preventDefault()}
             onDrop={(event) => handleDrop(event, dimension.id, null)}
           >
-            <div className="flex flex-col gap-3 border-b border-[#E5E7EB] pb-4 md:flex-row md:items-start md:justify-between">
-              <div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <h3 className="text-lg font-semibold tracking-[-0.02em] text-[#1A1A1A]">
+            <div
+              className={`flex flex-col gap-3 md:flex-row md:items-center md:justify-between ${
+                isCollapsed ? "" : "border-b border-[#E5E7EB] pb-4"
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => toggleDimension(dimension.id)}
+                className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                aria-expanded={!isCollapsed}
+                aria-label={`${isCollapsed ? "Show" : "Hide"} ${dimension.name} subdimensions`}
+              >
+                {isCollapsed ? (
+                  <ChevronRight className="h-4 w-4 shrink-0 text-[#6B7280]" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 shrink-0 text-[#6B7280]" />
+                )}
+
+                <div className="min-w-0">
+                  <h3 className="truncate text-base font-semibold text-[#1A1A1A]">
                     {dimension.name}
                   </h3>
-                  <span className="rounded-full bg-[#FFF8CC] px-3 py-1 text-xs font-semibold text-[#1A1A1A]">
-                    {dimension.code}
-                  </span>
+                  <p className="mt-1 text-xs text-[#6B7280]">
+                    {dimensionSubdimensions.length} subdimension
+                    {dimensionSubdimensions.length === 1 ? "" : "s"}
+                  </p>
                 </div>
-                <p className="mt-2 text-sm leading-6 text-[#6B7280]">
-                  Drag subdimensions with the mouse to change their order.
-                </p>
-              </div>
+              </button>
 
               <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full border border-[#E5E7EB] px-3 py-1 text-xs font-medium text-[#6B7280]">
-                  {dimensionSubdimensions.length} subdimension
-                  {dimensionSubdimensions.length === 1 ? "" : "s"}
-                </span>
                 <button
                   type="button"
                   onClick={() => onAdd(dimension.id)}
@@ -130,6 +159,7 @@ export default function SubdimensionTable({
               </div>
             </div>
 
+            {!isCollapsed ? (
             <div className="mt-5 grid gap-3">
               {dimensionSubdimensions.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-[#D1D5DB] bg-[#FCFCFC] p-5 text-sm text-[#6B7280]">
@@ -163,9 +193,6 @@ export default function SubdimensionTable({
                           <h4 className="text-sm font-semibold text-[#1A1A1A]">
                             {subdimension.name}
                           </h4>
-                          <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-[#6B7280]">
-                            {subdimension.code}
-                          </span>
                           <span
                             className={`rounded-full px-2.5 py-1 text-xs font-medium ${
                               subdimension.is_active
@@ -176,9 +203,8 @@ export default function SubdimensionTable({
                             {subdimension.is_active ? "Active" : "Inactive"}
                           </span>
                         </div>
-                        <p className="mt-2 text-sm leading-6 text-[#6B7280]">
-                          Weight {subdimension.weight} · Display order{" "}
-                          {subdimension.display_order}
+                        <p className="mt-2 text-xs text-[#6B7280]">
+                          Weight {subdimension.weight}
                         </p>
                       </div>
 
@@ -203,6 +229,7 @@ export default function SubdimensionTable({
                 ))
               )}
             </div>
+            ) : null}
           </section>
         );
       })}

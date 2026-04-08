@@ -4,6 +4,7 @@ const links = [
   { to: "/admin/sectors", label: "Sectors" },
   { to: "/admin/dimensions", label: "Dimensions" },
   { to: "/admin/subdimensions", label: "Subdimensions" },
+  { to: "/admin/questions", label: "Questions" },
 ];
 
 export default function Sidebar() {

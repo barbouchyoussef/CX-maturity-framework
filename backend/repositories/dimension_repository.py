@@ -3,7 +3,6 @@ from db import get_db_cursor
 
 
 def create_dimension(
-    sector_id: int,
     name: str,
     code: str,
     description: str | None,
@@ -13,7 +12,6 @@ def create_dimension(
 ) -> int:
     query = """
         INSERT INTO dimensions (
-            sector_id,
             name,
             code,
             description,
@@ -21,11 +19,10 @@ def create_dimension(
             display_order,
             is_active
         )
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s)
     """
 
     params = (
-        sector_id,
         name,
         code,
         description,
@@ -43,7 +40,6 @@ def get_all_dimensions() -> list[dict[str, Any]]:
     query = """
         SELECT
             id,
-            sector_id,
             name,
             code,
             description,
@@ -51,7 +47,7 @@ def get_all_dimensions() -> list[dict[str, Any]]:
             display_order,
             is_active
         FROM dimensions
-        ORDER BY sector_id ASC, display_order ASC, id ASC
+        ORDER BY display_order ASC, id ASC
     """
 
     with get_db_cursor(dictionary=True) as (_, cursor):
@@ -65,38 +61,10 @@ def get_all_dimensions() -> list[dict[str, Any]]:
     return rows
 
 
-def get_dimensions_by_sector(sector_id: int) -> list[dict[str, Any]]:
-    query = """
-        SELECT
-            id,
-            sector_id,
-            name,
-            code,
-            description,
-            weight,
-            display_order,
-            is_active
-        FROM dimensions
-        WHERE sector_id = %s
-        ORDER BY display_order ASC, id ASC
-    """
-
-    with get_db_cursor(dictionary=True) as (_, cursor):
-        cursor.execute(query, (sector_id,))
-        rows = cursor.fetchall()
-
-    for row in rows:
-        row["is_active"] = bool(row["is_active"])
-        row["weight"] = float(row["weight"])
-
-    return rows
-
-
 def get_dimension_by_id(dimension_id: int) -> dict[str, Any] | None:
     query = """
         SELECT
             id,
-            sector_id,
             name,
             code,
             description,
@@ -121,7 +89,6 @@ def get_dimension_by_id(dimension_id: int) -> dict[str, Any] | None:
 
 def update_dimension(
     dimension_id: int,
-    sector_id: int,
     name: str,
     code: str,
     description: str | None,
@@ -132,7 +99,6 @@ def update_dimension(
     query = """
         UPDATE dimensions
         SET
-            sector_id = %s,
             name = %s,
             code = %s,
             description = %s,
@@ -143,7 +109,6 @@ def update_dimension(
     """
 
     params = (
-        sector_id,
         name,
         code,
         description,
@@ -155,7 +120,14 @@ def update_dimension(
 
     with get_db_cursor(dictionary=False) as (_, cursor):
         cursor.execute(query, params)
-        return cursor.rowcount > 0
+        if cursor.rowcount > 0:
+            return True
+
+        cursor.execute(
+            "SELECT id FROM dimensions WHERE id = %s LIMIT 1",
+            (dimension_id,),
+        )
+        return cursor.fetchone() is not None
 
 
 def toggle_dimension_status(dimension_id: int) -> bool:

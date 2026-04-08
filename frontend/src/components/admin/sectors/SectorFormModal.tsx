@@ -55,9 +55,7 @@ function SectorFormContent({
       [name]:
         type === "checkbox"
           ? (e.target as HTMLInputElement).checked
-          : name === "display_order"
-            ? Number(value)
-            : value,
+          : value,
     }));
   };
 
@@ -138,25 +136,6 @@ function SectorFormContent({
               placeholder="RETAIL"
             />
           </div>
-        </div>
-
-        <div>
-          <label
-            htmlFor="display_order"
-            className="mb-2.5 block text-sm font-medium text-[#1A1A1A]"
-          >
-            Display order
-          </label>
-          <input
-            id="display_order"
-            name="display_order"
-            type="number"
-            min="0"
-            value={form.display_order}
-            onChange={handleChange}
-            required
-            className="h-12 w-full rounded-xl border border-[#E5E7EB] bg-[#FCFCFC] px-4 text-sm text-[#1A1A1A] outline-none focus:border-[#C5A04F] focus:bg-white"
-          />
         </div>
 
         <div>
